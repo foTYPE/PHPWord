@@ -114,6 +114,7 @@ class Html
         $nodes = array(
                               // $method        $node   $element    $styles     $data   $argument1      $argument2
             'p'         => array('Paragraph',   $node,  $element,   $styles,    null,   null,           null),
+            'a'         => array('Link',        $node,  $element,   $styles,    null,   'Link',         null),
             'h1'        => array('Heading',     null,   $element,   $styles,    null,   'Heading1',     null),
             'h2'        => array('Heading',     null,   $element,   $styles,    null,   'Heading2',     null),
             'h3'        => array('Heading',     null,   $element,   $styles,    null,   'Heading3',     null),
@@ -211,6 +212,35 @@ class Html
     }
 
     /**
+     * Parse link node
+     *
+     * @param \DOMNode $node
+     * @param \PhpOffice\PhpWord\Element\AbstractContainer $element
+     * @param array &$styles
+     * @return \PhpOffice\PhpWord\Element\Link
+     */
+    private static function parseLink($node, $element, &$styles, $argument1)
+    {
+        $newElement = null;
+
+        $styles['font'] = self::recursiveParseStylesInHierarchy($node, $styles['font']);
+
+        if (isset($styles['font']['alignment'])) {
+            $styles['paragraph']['alignment'] = $styles['font']['alignment'];
+        }
+
+        if (empty($styles['font']['color'])) {
+            $styles['font']['color'] = '168eea';
+        }
+
+        if (is_callable(array($element, 'addLink'))) {
+            $newElement = $element->addLink($node->getAttribute('href'), $node->nodeValue, $styles['font'], $styles['paragraph']);
+        }
+
+        return $newElement;
+    }
+
+    /**
      * Parse heading node
      *
      * @param \PhpOffice\PhpWord\Element\AbstractContainer $element
@@ -243,6 +273,29 @@ class Html
         //alignment applies on paragraph, not on font. Let's copy it there
         if (isset($styles['font']['alignment'])) {
             $styles['paragraph']['alignment'] = $styles['font']['alignment'];
+        }
+
+        if (in_array($styles['paragraph'], array('Heading1', 'Heading2', 'Heading3', 'Heading4', 'Heading5', 'Heading6'))) {
+            switch ($styles['paragraph']) {
+                case 'Heading1':
+                    $styles['font']['size'] = 32;
+                    break;
+                case 'Heading2':
+                    $styles['font']['size'] = 28;
+                    break;
+                case 'Heading3':
+                    $styles['font']['size'] = 22;
+                    break;
+                case 'Heading4':
+                    $styles['font']['size'] = 18;
+                    break;
+                case 'Heading5':
+                    $styles['font']['size'] = 16;
+                    break;
+                case 'Heading6':
+                    $styles['font']['size'] = 14;
+                    break;
+            }
         }
 
         if (is_callable(array($element, 'addText'))) {
